@@ -1,0 +1,44 @@
+name: This rule detects execution of PowerShell scripts located in the "C:\Users\Public" folder
+id: 52c9da6b-49bf-4dca-bc82-60998f6aaf94
+version: 1.0.0
+description: |
+  This rule detects execution of PowerShell scripts located in the "C:\Users\Public" folder
+
+enabled: true
+tags:
+- attack.execution
+- attack.t1059.001
+
+references:
+- https://www.mandiant.com/resources/evolution-of-fin7
+
+condition: |
+  spawn_process
+    and
+  (((ps.child.exe iendswith '\\powershell.exe' or ps.child.exe iendswith '\\pwsh.exe') and (ps.child.cmdline icontains '-f C:\\Users\\Public' or ps.child.cmdline icontains '-f "C:\\Users\\Public' or ps.child.cmdline icontains '-f %Public%' or ps.child.cmdline icontains '-fi C:\\Users\\Public' or ps.child.cmdline icontains '-fi "C:\\Users\\Public' or ps.child.cmdline icontains '-fi %Public%' or ps.child.cmdline icontains '-fil C:\\Users\\Public' or ps.child.cmdline icontains '-fil "C:\\Users\\Public' or ps.child.cmdline icontains '-fil %Public%' or ps.child.cmdline icontains '-file C:\\Users\\Public' or ps.child.cmdline icontains '-file "C:\\Users\\Public' or ps.child.cmdline icontains '-file %Public%')))
+
+output: |-
+  This rule detects execution of PowerShell scripts located in the "C:\Users\Public" folder
+
+  Detection Details:
+  - Rule: execution_of_powershell_script_in_public_folder
+
+  Process Information:
+  - Process Name: %ps.name
+  - Command Line: %ps.cmdline
+  - Parent Process: %ps.parent.name
+  - Parent PID: %ps.ppid
+  - User: %ps.username
+  - Session ID: %ps.sessionid
+
+  File Information:
+  - File Path: %file.path
+  - File Name: %file.name
+
+  Network Information:
+  - Destination: %net.dip:%net.dport
+  - Source: %net.sip:%net.sport
+
+severity: high
+
+min-engine-version: 2.0.0

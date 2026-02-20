@@ -1,0 +1,48 @@
+name: Sysmon registry detection of a local hidden user account.
+id: dfa902c0-c21a-4ae6-b29c-77442034f16c
+version: 1.0.0
+description: |
+  Sysmon registry detection of a local hidden user account.
+
+enabled: true
+tags:
+- attack.persistence
+- attack.t1136.001
+
+references:
+- https://twitter.com/SBousseaden/status/1387530414185664538
+
+condition: >
+  modify_registry
+    and
+  ps.exe iendswith '\\lsass.exe'
+    and
+  registry.path icontains '\\SAM\\SAM\\Domains\\Account\\Users\\Names\\'
+    and
+  registry.path iendswith '$'
+
+output: |-
+  Sysmon registry detection of a local hidden user account.
+
+  Detection Details:
+  - Rule: creation_of_a_local_hidden_user_account_by_registr
+
+  Process Information:
+  - Process Name: %ps.name
+  - Command Line: %ps.cmdline
+  - Parent Process: %ps.parent.name
+  - Parent PID: %ps.ppid
+  - User: %ps.username
+  - Session ID: %ps.sessionid
+
+  File Information:
+  - File Path: %file.path
+  - File Name: %file.name
+
+  Network Information:
+  - Destination: %net.dip:%net.dport
+  - Source: %net.sip:%net.sport
+
+severity: high
+
+min-engine-version: 2.0.0

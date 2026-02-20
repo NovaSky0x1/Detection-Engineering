@@ -1,0 +1,44 @@
+name: Palo Alto GlobalProtect command injection via CVE-2024-3400
+id: c9f1e4d3-5a7b-6c9e-1d4f-8b2c3e5f6789
+version: 1.0.0
+description: |
+  GlobalProtect Palo Alto Exploitation Detected:
+  
+  Detects active exploitation of CVE-2024-3400, a critical command injection vulnerability 
+  in Palo Alto Networks GlobalProtect Gateway (CVSS 10.0). Attackers can execute arbitrary 
+  commands with root privileges on affected systems without authentication by sending 
+  specially crafted requests. This zero-day vulnerability has been actively exploited in 
+  the wild to deploy backdoors and establish persistent access. The detection identifies 
+  suspicious child processes spawned by the GlobalProtect service that indicate successful 
+  exploitation and command execution.
+  
+  Normal: PanGPS.exe spawns PanGPA.exe, PanGPS_mon.exe, signed PA processes only
+  Likely malicious: PanGPS.exe→cmd.exe/powershell.exe/whoami.exe, any system binary spawn
+labels:
+  tactic.id: TA0001
+  tactic.name: Initial Access
+  tactic.ref: https://attack.mitre.org/tactics/TA0001/
+
+condition: >
+  spawn_process 
+    and
+  ps.name imatches '*PanGPS.exe'
+    and
+  ps.child.name iin ('cmd.exe', 'powershell.exe', 'pwsh.exe', 'whoami.exe')
+    and
+  not (
+    ps.child.cmdline icontains 'flushdns'
+      or
+    ps.child.cmdline imatches '*reg export*Settings\\*\\windows\\TEMP\\uninstall.reg*'
+  )
+output: |
+  GlobalProtect Exploitation Detected
+  
+  Vulnerable Service: %ps.name
+  Spawned Process: %ps.child.name
+  Command: %ps.child.cmdline
+  Parent Path: %ps.exe
+
+severity: critical
+
+min-engine-version: 2.4.0

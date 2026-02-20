@@ -1,0 +1,162 @@
+name: Ransomware In Progress - File I/O variant – Enum / Delete / Create / Read / Write
+id: 9f7aab92-0002-4fcd-85ea-59692f44712f
+version: 1.1.0
+description: |
+  Detected suspicious multi-step file i/o ransomeware pattern:
+  
+  Detects classic ransomware file operation sequence: enumerate directory to find targets, 
+  delete shadow copies or backups, create new encrypted files, read original content, and 
+  write encrypted data. This 2ms sequential pattern captures the moment ransomware begins 
+  actively encrypting user files, requiring immediate termination.
+  
+  Normal: Document editors with save operations >5ms apart, backup software with manifests
+  Likely malicious: Unsigned process: enum/delete→create→read→read/write→write <2ms on user folders
+
+enabled: true
+
+condition: >
+  sequence
+    maxspan 2ms
+    by ps.uuid
+    |(
+      (
+        image.signature.type = 'NONE'
+          or
+        image.signature.level = 'UNCHECKED'
+          or
+        pe.is_trusted = false
+      )
+        and
+      (
+        kevt.name = 'EnumDirectory'
+        or
+        kevt.name = 'DeleteFile'
+      )
+      and file.path imatches 
+        (
+          '?:\\Users\\*\\Desktop\\*',
+          '?:\\Users\\*\\Documents\\*', 
+          '?:\\Users\\*\\Downloads\\*',
+          '?:\\Users\\*\\Pictures\\*'
+        )
+      and not file.name iendswith
+        (
+          'desktop.ini',
+          '.tmp',
+          '.lnk',
+          '.url',
+          '.ini',
+          '.db'
+        )
+      and not ps.exe imatches '?:\\Program Files*'
+      and not (
+        ps.name in (
+          'OneDrive.exe',
+          'Dropbox.exe',
+          'BackupService.exe',
+          'GoogleDriveFS.exe',
+          'BoxSync.exe',
+          'SafeBackup.exe',
+          'explorer.exe'
+        )
+      )
+    )|
+    |(
+      kevt.name = 'CreateFile'
+      and file.operation in ('CREATE','OPEN')
+      and file.path imatches 
+        (
+          '?:\\Users\\*\\Desktop\\*',
+          '?:\\Users\\*\\Documents\\*', 
+          '?:\\Users\\*\\Downloads\\*',
+          '?:\\Users\\*\\Pictures\\*'
+        )
+      and not file.name iendswith
+        (
+          'desktop.ini',
+          '.tmp',
+          '.lnk',
+          '.url',
+          '.ini'
+        )
+    )|
+    |(
+      kevt.name = 'ReadFile'
+      and file.path imatches 
+        (
+          '?:\\Users\\*\\Desktop\\*',
+          '?:\\Users\\*\\Documents\\*', 
+          '?:\\Users\\*\\Downloads\\*',
+          '?:\\Users\\*\\Pictures\\*'
+        )
+      and not file.name iendswith
+        (
+          'desktop.ini',
+          '.tmp',
+          '.lnk',
+          '.url',
+          '.ini'
+        )
+    )|
+    |(
+      (
+        kevt.name = 'ReadFile'
+        or
+        kevt.name = 'WriteFile'
+      )
+      and file.path imatches 
+        (
+          '?:\\Users\\*\\Desktop\\*',
+          '?:\\Users\\*\\Documents\\*', 
+          '?:\\Users\\*\\Downloads\\*',
+          '?:\\Users\\*\\Pictures\\*'
+        )
+      and not file.name iendswith
+        (
+          'desktop.ini',
+          '.tmp',
+          '.lnk',
+          '.url',
+          '.ini'
+        )
+    )|
+    |(
+      (
+        kevt.name = 'WriteFile'
+        or
+        kevt.name = 'CreateFile'
+      )
+      and file.path imatches 
+        (
+          '?:\\Users\\*\\Desktop\\*',
+          '?:\\Users\\*\\Documents\\*', 
+          '?:\\Users\\*\\Downloads\\*',
+          '?:\\Users\\*\\Pictures\\*'
+        )
+      and not file.name iendswith
+        (
+          'desktop.ini',
+          '.tmp',
+          '.lnk',
+          '.url',
+          '.ini'
+        )
+    )|
+
+output: |
+  Detected suspicious multi-step file i/o pattern matching enum/delete → create → read → read-or-write → final write/create. Commonly associated with Ransomware.
+
+  Process Information:
+
+  - Process Name: %ps.name 
+  - Command Line: %ps.cmdline
+  - Parent Process: %ps.parent.name (PPID: %ps.ppid)
+
+  - Signature Status: %pe.is_signed
+  - Cert Subject: %pe.cert.subject
+  - Cert Issuer: %pe.cert.issuer
+  - Process is Modified?: %pe.is_modified
+
+severity: critical
+
+min-engine-version: 2.0.0

@@ -1,0 +1,59 @@
+name: Volt Typhoon rapid reconnaissance commands
+id: a8f4d2b1-3c5e-4d7f-9a2b-6e8c9f0d1234
+version: 1.1.2
+description: |
+  Volt Typhoon Recon Sequence Detected:
+  
+  Detects rapid sequential execution of system reconnaissance commands characteristic of 
+  the Chinese state-sponsored Volt Typhoon group's operational patterns. This APT focuses 
+  on critical infrastructure and employs living-off-the-land techniques to maintain 
+  long-term persistence while remaining undetected. The rapid enumeration sequence 
+  (systeminfo, netstat, ipconfig within 60 seconds) is a distinctive behavioral fingerprint 
+  used during initial compromise to map the victim environment. Volt Typhoon has been 
+  observed pre-positioning for potential disruptive attacks against US critical 
+  infrastructure, making early detection crucial.
+  
+  Normal: Individual commands with parameters, >60s intervals, from cmd.exe/admin tools
+  Likely malicious: systeminfo→netstat→ipconfig <60s, no parameters, from web/Office/RAT processes
+labels:
+  tactic.id: TA0007
+  tactic.name: Discovery
+  tactic.ref: https://attack.mitre.org/tactics/TA0007/
+  technique.id: T1057
+  technique.name: Process Discovery
+  technique.ref: https://attack.mitre.org/techniques/T1057/
+references:
+  - https://www.cisa.gov/news-events/cybersecurity-advisories/aa24-038a
+
+condition: >
+  sequence
+  maxspan 1m
+  by ps.uuid
+    |spawn_process and ps.child.name ~= 'systeminfo.exe'|
+    |spawn_process and ps.child.name ~= 'netstat.exe'|
+    |spawn_process and ps.child.name ~= 'ipconfig.exe'|
+
+output: |
+  Volt Typhoon Recon Sequence Detected
+  
+  Parent: %1.ps.name
+  Commands executed in rapid succession:
+  1. %1.ps.child.name
+  2. %2.ps.child.name  
+  3. %3.ps.child.name
+  
+  All within 60 seconds - matches Volt Typhoon TTPs.
+
+  Process Information:
+
+  - Process Name: %ps.name 
+  - Command Line: %ps.cmdline
+  - Parent Process: %ps.parent.name (PPID: %ps.ppid)
+
+  - Signature Status: %pe.is_signed
+  - Cert Subject: %pe.cert.subject
+  - Cert Issuer: %pe.cert.issuer
+  - Process is Modified?: %pe.is_modified
+
+severity: high
+min-engine-version: 2.4.0

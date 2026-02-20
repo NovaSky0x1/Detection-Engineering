@@ -1,0 +1,43 @@
+name: SocGholish fake browser update with scheduled task persistence
+id: b7e5f3a2-4d6f-5e8a-0b3c-7f9d8e1a2345
+version: 1.0.0
+description: |
+  SocGholish Fake Browser Update Campaign Detected:
+  
+  Identifies the SocGholish (FakeUpdates) malware campaign that uses compromised websites 
+  to serve fake browser update notifications. Victims download malicious JavaScript files 
+  disguised as browser updates, which when executed, establish persistence through Windows 
+  scheduled tasks and deploy secondary payloads including ransomware (commonly NetSupport 
+  RAT or Cobalt Strike). This widespread campaign has been active since 2017 and serves 
+  as a primary initial access broker for ransomware groups. The detection tracks the 
+  characteristic download-to-execution-to-persistence chain within a short time window.
+  
+  Normal: Browser updates via GoogleUpdate.exe/MozillaUpdater.exe, no .js downloads
+  Likely malicious: .js in %Downloads%→wscript execution→schtasks /create within 5min window
+labels:
+  tactic.id: TA0001
+  tactic.name: Initial Access
+  tactic.ref: https://attack.mitre.org/tactics/TA0001/
+
+condition: >
+  sequence
+  maxspan 5m
+    |create_file and file.extension = '.js' and file.path imatches '*\\Downloads\\*.js'| by ps.sid
+    |spawn_process and ps.child.name ~= 'schtasks.exe' and ps.child.cmdline imatches '*/create*'| by ps.sid
+
+output: |
+  SocGholish Fake Browser Update Campaign Detected
+  
+  Malicious JavaScript Dropper:
+  - File Path: %1.file.path
+  - File Name: %1.file.name
+  - Created By: %1.ps.name (PID: %1.ps.pid)
+  
+  Persistence via Scheduled Task:
+  - Command: %2.ps.child.cmdline
+  - Task Creator: %2.ps.child.exe
+  - Parent Process: %2.ps.name
+
+severity: critical
+
+min-engine-version: 2.4.0

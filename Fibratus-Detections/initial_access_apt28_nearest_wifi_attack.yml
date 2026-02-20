@@ -1,0 +1,50 @@
+name: APT28 Nearest Neighbor Wi-Fi lateral movement reconnaissance
+id: b7e9f2c3-4d6a-8e1b-0c5f-7a8d9b2c3456
+version: 1.0.0
+description: |
+  APT28 Nearest Neighbor Wi-Fi Attack Detected:
+  
+  Detects APT28's sophisticated "Nearest Neighbor" attack technique where threat actors 
+  compromise an initial target, then leverage Windows netsh commands to enumerate nearby 
+  Wi-Fi networks and attempt connections to physically adjacent organizations. This novel 
+  lateral movement method exploits physical proximity to bypass traditional network 
+  segmentation and perimeter defenses, allowing attackers to jump air gaps between 
+  organizations that share office buildings or campuses. The attack chain involves Wi-Fi 
+  network discovery followed by connection attempts within a short timeframe.
+  
+  Normal: netsh wlan commands with >5min gaps, single network targets, IT admin accounts
+  Likely malicious: <5min between enum→connect, multiple network attempts, non-admin users, off-hours
+labels:
+  tactic.id: TA0007
+  tactic.name: Discovery
+  tactic.ref: https://attack.mitre.org/tactics/TA0007/
+  technique.id: T1049
+  technique.name: System Network Connections Discovery
+  technique.ref: https://attack.mitre.org/techniques/T1049/
+references:
+  - https://www.volexity.com/blog/2022/11/23/apt28-exploits-known-vulnerability/
+
+condition: >
+  sequence
+  maxspan 5m
+    |spawn_process and ps.child.name = 'netsh.exe' and ps.child.cmdline contains 'wlan'| by ps.ppid
+    |spawn_process and ps.child.name = 'netsh.exe' and ps.child.cmdline contains 'connect'| by ps.ppid
+
+output: |
+  APT28 Nearest Neighbor Wi-Fi Attack Detected
+  
+  Wi-Fi Enumeration Phase:
+  - Command: %1.ps.child.cmdline
+  - Process: %1.ps.child.exe
+  - Parent: %1.ps.name (PID: %1.ps.pid)
+  
+  Wi-Fi Connection Attempt:
+  - Command: %2.ps.child.cmdline
+  - Target Network: %2.ps.child.args
+  
+  Attack Context:
+  - User: %1.ps.username @ %1.ps.domain
+  - Session: %1.ps.sid
+
+severity: high
+min-engine-version: 2.4.0
