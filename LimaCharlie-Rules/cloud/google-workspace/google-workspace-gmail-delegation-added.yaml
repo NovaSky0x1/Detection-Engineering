@@ -1,0 +1,47 @@
+# Google Workspace - Gmail Delegation Added
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  event: CLOUD_NOTIFICATION
+  op: is
+  path: event/protoPayload/methodName
+  value: google.admin.AdminService.addEmailDelegate
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Detects the addition of a Gmail delegation, which grants persistent access to an email account, surviving
+      password changes. This technique is often used in BEC attacks to maintain access and monitor communications.
+    false_positives:
+    - Legitimate delegation to assistants or executive support staff
+    - Temporary access for vacation forwarding or specific project collaboration
+    - Configuration of shared mailboxes or group email management
+    investigation_steps:
+    - Immediately identify the delegate email address and the principal user's account
+    - Determine if the delegate is an internal or external domain
+    - Verify the legitimacy of the delegation with the principal user via out-of-band method
+    - If unauthorized, remove the delegation immediately
+    - Review recent login activity for the principal account
+    - Check for other suspicious Google Workspace settings
+    mitre_attack:
+    - T1114.003 - Email Collection: Email Forwarding Rule
+    - T1098.002 - Account Manipulation: Additional Email Delegate Permissions
+    - T1564.008 - Hide Artifacts: Email Hiding Rules
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    references:
+    - https://attack.mitre.org/techniques/T1114/003/
+    - https://attack.mitre.org/techniques/T1098/002/
+    - https://attack.mitre.org/techniques/T1564/008/
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://www.fbi.gov/news/stories/business-email-compromise-on-the-rise
+    severity: critical
+  name: Google Workspace - Gmail Delegation Added
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.protoPayload.authenticationInfo.principalEmail }}'
+    - gmail-delegation-added
+    max_count: 1
+    period: 24h

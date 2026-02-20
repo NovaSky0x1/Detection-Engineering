@@ -1,0 +1,51 @@
+# M365 - Audit Log Settings Modified
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  events:
+  - Set-AdminAuditLogConfig
+  - Update diagnostic setting
+  - Delete diagnostic setting
+  - Set-UnifiedAuditLogRetentionPolicy
+  - Remove-UnifiedAuditLogRetentionPolicy
+  op: exists
+  path: event/Operation
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Audit log configuration settings were modified, including retention policies or diagnostic settings. Attackers
+      modify audit log settings to reduce forensic evidence retention, disable logging, or redirect logs to attacker-controlled
+      locations.
+    false_positives:
+    - Legitimate IT administrator changes to audit log retention policies
+    - Compliance-driven audit configuration updates
+    - Scheduled maintenance or configuration changes
+    - Migration to new logging infrastructure
+    investigation_steps:
+    - Identify which specific audit log setting was modified
+    - Determine the user account that made the change
+    - Review the previous configuration vs. new configuration
+    - Check if retention period was reduced or logging was disabled
+    - Verify if diagnostic settings were redirected to external locations
+    - Review recent login activity for the user account
+    - Check for other suspicious administrative actions by the same user
+    - Correlate with any recent security alerts or incidents
+    mitre_attack:
+    - T1562.008 - Impair Defenses: Disable or Modify Cloud Logs
+    - T1070.002 - Indicator Removal: Clear Windows Event Logs
+    references:
+    - https://attack.mitre.org/techniques/T1562/008/
+    - https://docs.microsoft.com/en-us/microsoft-365/compliance/audit-log-retention-policies
+    - https://docs.microsoft.com/en-us/azure/azure-monitor/essentials/diagnostic-settings
+    severity: critical
+  name: M365 - Audit Log Settings Modified
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-audit-config
+    max_count: 5
+    period: 1h

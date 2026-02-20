@@ -1,0 +1,47 @@
+# M365 - Outlook Client Inbox Rule with Forwarding
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: UpdateInboxRules
+  op: or
+  rules:
+  - case sensitive: false
+    op: contains
+    path: event/OperationProperties/?/Value
+    value: ForwardToRecipientsAction
+  - case sensitive: false
+    op: contains
+    path: event/OperationProperties/?/Value
+    value: ForwardAsAttachmentToRecipientsAction
+  - case sensitive: false
+    op: contains
+    path: event/OperationProperties/?/Value
+    value: RedirectToRecipientsAction
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: 'An inbox rule with forwarding was created or modified via Outlook Desktop client. Note: Rules created via
+      Outlook Desktop may have limited audit detail.'
+    false_positives:
+    - Legitimate forwarding rules created via Outlook
+    investigation_steps:
+    - Query the mailbox directly using Get-InboxRule to see full rule details
+    - Check destination addresses in the forwarding rule
+    - Verify with user if they created this rule
+    mitre_attack:
+    - T1114.003 - Email Collection: Email Forwarding Rule
+    references:
+    - https://attack.mitre.org/techniques/T1114/003/
+    - https://invictus-ir.medium.com/email-forwarding-rules-in-microsoft-365-295fcb63d4fb
+    severity: high
+  name: M365 - Outlook Client Inbox Rule with Forwarding
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-outlook-forward
+    max_count: 3
+    period: 1h

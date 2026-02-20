@@ -1,0 +1,69 @@
+# M365 - Device Code Flow Authentication
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: UserLoggedIn
+  op: or
+  rules:
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: deviceCode
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: device_code
+  - op: contains
+    path: event/AuthenticationProtocol
+    value: deviceCode
+  - op: contains
+    path: event/AuthenticationProtocol
+    value: device_code
+  - op: contains
+    path: event/DeviceDetail
+    value: deviceCode
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A user authenticated using the OAuth 2.0 device code flow. Attackers frequently abuse this legitimate authentication
+      method through phishing campaigns that trick users into visiting Microsoft's device code page and entering attacker-provided
+      codes.
+    false_positives:
+    - Legitimate Azure CLI usage by developers and administrators
+    - PowerShell Az module authentication workflows
+    - IoT devices and embedded systems using device code flow
+    - Smart TV applications and streaming devices
+    - Authorized automation scripts using device authentication
+    - Kiosk or shared device scenarios
+    investigation_steps:
+    - Identify the user who performed the device code authentication
+    - Review the application that was authorized via device code
+    - Check the IP address and geolocation of the authentication
+    - Verify if the user was expecting to authenticate a device
+    - Review the time of authentication against business hours
+    - Check for any recent phishing emails received by the user
+    - Examine what actions were taken immediately after authentication
+    - Look for unusual resource access or privilege escalation
+    - Verify if the user has legitimate need for device code flow
+    - Check for multiple device code authentications in short timeframe
+    - Review user agent and device details for anomalies
+    - Correlate with other suspicious activities on the account
+    mitre_attack:
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    - T1556.006 - Modify Authentication Process: Multi-Factor Authentication
+    - T1566.002 - Phishing: Spearphishing Link
+    references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://attack.mitre.org/techniques/T1566/002/
+    - https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-device-code
+    - https://www.crowdstrike.com/blog/how-scattered-spider-exploits-device-code-authentication/
+    severity: high
+  name: M365 - Device Code Flow Authentication
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-device-code
+    max_count: 5
+    period: 1h

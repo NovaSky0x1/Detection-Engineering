@@ -1,0 +1,58 @@
+# M365 - Admin Consent Granted to Application
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: Consent to application.
+  op: and
+  rules:
+  - op: exists
+    path: event/ObjectId
+  - op: or
+    rules:
+    - op: and
+      rules:
+      - op: is
+        path: event/ModifiedProperties/?/Name
+        value: ConsentContext.IsAdminConsent
+      - op: is
+        path: event/ModifiedProperties/?/NewValue
+        value: 'True'
+    - op: and
+      rules:
+      - op: is
+        path: event/ModifiedProperties/?/Name
+        value: ConsentContext.OnBehalfOfAll
+      - op: is
+        path: event/ModifiedProperties/?/NewValue
+        value: 'True'
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Tenant-wide admin consent was granted to an application. This grants the application access for all users
+      in the organization - high risk if unauthorized.
+    false_positives:
+    - Legitimate admin consent for enterprise applications
+    - IT-approved third-party integrations
+    investigation_steps:
+    - Identify the admin who granted consent
+    - Review the application and its permissions
+    - Verify the business justification
+    - Check if the application is from a verified publisher
+    mitre_attack:
+    - T1528 - Steal Application Access Token
+    - T1098.001 - Account Manipulation: Additional Cloud Credentials
+    references:
+    - https://attack.mitre.org/techniques/T1528/
+    - https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/grant-admin-consent
+    severity: high
+  name: M365 - Admin Consent Granted to Application
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-admin-consent
+    max_count: 5
+    period: 1h

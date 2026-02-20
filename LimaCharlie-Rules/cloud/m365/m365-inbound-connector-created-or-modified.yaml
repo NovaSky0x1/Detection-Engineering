@@ -1,0 +1,51 @@
+# M365 - Inbound Connector Created or Modified
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  events:
+  - New-InboundConnector
+  - Set-InboundConnector
+  op: exists
+  path: event/Operation
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: An Exchange Online inbound mail connector was created or modified. Attackers create or modify these connectors
+      to route mail through attacker-controlled infrastructure, bypass spam filtering, or establish persistence for phishing
+      campaigns.
+    false_positives:
+    - Legitimate connector creation for new business partnerships
+    - Migration activities to new email gateways
+    - Configuration changes by authorized Exchange administrators
+    - Third-party email security service integration
+    - Hybrid Exchange configuration updates
+    investigation_steps:
+    - Identify which connector was created or modified
+    - Review the connector's source IP addresses or domains
+    - Check if the connector bypasses anti-spam or anti-malware filtering
+    - Verify the user account that made the change
+    - Review recent login activity for the user account
+    - Check if connector points to known malicious or suspicious infrastructure
+    - Determine if connector was created during off-hours
+    - Review mail flow logs for messages routed through the connector
+    - Correlate with other suspicious Exchange configuration changes
+    mitre_attack:
+    - T1071.003 - Application Layer Protocol: Mail Protocols
+    - T1562.001 - Impair Defenses: Disable or Modify Tools
+    - T1564.008 - Hide Artifacts: Email Hiding Rules
+    references:
+    - https://attack.mitre.org/techniques/T1071/003/
+    - https://attack.mitre.org/techniques/T1562/001/
+    - https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/use-connectors-to-configure-mail-flow/use-connectors-to-configure-mail-flow
+    severity: critical
+  name: M365 - Inbound Connector Created or Modified
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-inbound-connector
+    max_count: 3
+    period: 1h

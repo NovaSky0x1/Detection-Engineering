@@ -1,0 +1,81 @@
+# M365 - Member Added to Privileged Group
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  event: Add member to group
+  op: or
+  rules:
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Global Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Privileged Role Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Security Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Exchange Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: SharePoint Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Intune Administrators
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: User Administrator
+  - op: is
+    path: event/TargetResources/?/DisplayName
+    value: Conditional Access Administrators
+  - op: contains
+    path: event/TargetResources/?/DisplayName
+    value: CA Exclusion
+  - op: contains
+    path: event/TargetResources/?/DisplayName
+    value: Break Glass
+  - op: contains
+    path: event/TargetResources/?/DisplayName
+    value: EmergencyAccess
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A member was added to a privileged Entra ID group. Attackers who compromise accounts with sufficient privileges
+      add themselves or other compromised accounts to these groups to escalate privileges and establish persistence.
+    false_positives:
+    - Legitimate administrative access provisioning
+    - New IT staff onboarding to admin roles
+    - Temporary elevated access for specific projects or incidents
+    - Break-glass account testing
+    - Role rotation between administrators
+    investigation_steps:
+    - Identify which privileged group received a new member
+    - Verify the user account that was added
+    - Check the user account that performed the addition
+    - Review if there was an approved access request
+    - Examine recent login activity for both users
+    - Verify if the new member has legitimate business justification
+    - Check if this is a PIM time-limited assignment
+    - Look for subsequent privileged actions by the newly added member
+    mitre_attack:
+    - T1098.003 - Account Manipulation: Additional Cloud Roles
+    - T1136.003 - Create Account: Cloud Account
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    references:
+    - https://attack.mitre.org/techniques/T1098/003/
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://docs.microsoft.com/en-us/azure/active-directory/roles/permissions-reference
+    severity: critical
+  name: M365 - Member Added to Privileged Group
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - '{{ .event.UserId }}'
+    - m365-priv-group-add
+    max_count: 3
+    period: 12h

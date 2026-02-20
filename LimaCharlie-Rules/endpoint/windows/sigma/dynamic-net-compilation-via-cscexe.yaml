@@ -1,0 +1,115 @@
+# Dynamic .NET Compilation Via Csc.EXE
+# LimaCharlie D&R Rule
+# Author: Florian Roth (Nextron Systems), X__Junior (Nextron Systems)
+# Severity: medium
+
+detect:
+  events:
+  - NEW_PROCESS
+  - EXISTING_PROCESS
+  op: and
+  rules:
+  - op: is windows
+  - op: and
+    rules:
+    - op: and
+      rules:
+      - op: and
+        rules:
+        - case sensitive: false
+          op: ends with
+          path: event/FILE_PATH
+          value: \csc.exe
+        - op: or
+          rules:
+          - op: or
+            rules:
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: :\Perflogs\
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: :\Users\Public\
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: \AppData\Local\Temp\
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: \Temporary Internet
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: \Windows\Temp\
+          - op: and
+            rules:
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: :\Users\
+            - case sensitive: false
+              op: contains
+              path: event/COMMAND_LINE
+              value: \Favorites\
+          - op: matches
+            path: event/COMMAND_LINE
+            re: ([Pp]rogram[Dd]ata|%([Ll]ocal)?[Aa]pp[Dd]ata%|\\[Aa]pp[Dd]ata\\([Ll]ocal([Ll]ow)?|[Rr]oaming))\\[^\\]{1,256}$
+      - not: true
+        op: or
+        rules:
+        - op: or
+          rules:
+          - case sensitive: false
+            op: starts with
+            path: event/PARENT/FILE_PATH
+            value: C:\Program Files (x86)\
+          - case sensitive: false
+            op: starts with
+            path: event/PARENT/FILE_PATH
+            value: C:\Program Files\
+        - case sensitive: false
+          op: is
+          path: event/PARENT/FILE_PATH
+          value: C:\Windows\System32\sdiagnhost.exe
+        - case sensitive: false
+          op: is
+          path: event/PARENT/FILE_PATH
+          value: C:\Windows\System32\inetsrv\w3wp.exe
+    - not: true
+      op: or
+      rules:
+      - op: or
+        rules:
+        - case sensitive: false
+          op: is
+          path: event/PARENT/FILE_PATH
+          value: C:\ProgramData\chocolatey\choco.exe
+        - case sensitive: false
+          op: is
+          path: event/PARENT/FILE_PATH
+          value: C:\ProgramData\chocolatey\tools\shimgen.exe
+      - case sensitive: false
+        op: contains
+        path: event/PARENT/COMMAND_LINE
+        value: \ProgramData\Microsoft\Windows Defender Advanced Threat Protection
+respond:
+- action: report
+  metadata:
+    author: Florian Roth (Nextron Systems), X__Junior (Nextron Systems)
+    description: Detects execution of csc.exe to compile .NET code. Attackers often leverage this to compile code on the fly
+      and use it in other stages.
+    falsepositives:
+    - Legitimate software from program files
+    - Legitimate Microsoft software
+    - Ansible
+    level: medium
+    references:
+    - https://securityboulevard.com/2019/08/agent-tesla-evading-edr-by-removing-api-hooks/
+    - https://github.com/redcanaryco/atomic-red-team/blob/b27a3cb25025161d49ac861cb216db68c46a3537/atomics/T1027.004/T1027.004.md
+    tags:
+    - attack.defense-evasion
+    - attack.t1027.004
+  name: Dynamic .NET Compilation Via Csc.EXE

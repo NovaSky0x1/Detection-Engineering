@@ -1,0 +1,47 @@
+# M365 - Mailbox Server-Side Forwarding Configured
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: Set-Mailbox
+  op: or
+  rules:
+  - op: is
+    path: event/Parameters/?/Name
+    value: ForwardingSmtpAddress
+  - op: is
+    path: event/Parameters/?/Name
+    value: ForwardingAddress
+  - op: is
+    path: event/Parameters/?/Name
+    value: DeliverToMailboxAndForward
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Server-side email forwarding was configured on a mailbox using Set-Mailbox. This forwards ALL email at the
+      server level, bypassing inbox rules.
+    false_positives:
+    - IT-configured forwarding for mailbox migrations
+    - Legitimate external forwarding (should be rare)
+    investigation_steps:
+    - Identify the forwarding destination address
+    - Check if destination is external
+    - Verify with user and IT if this was authorized
+    - Review who made the change (admin vs user)
+    mitre_attack:
+    - T1114.003 - Email Collection: Email Forwarding Rule
+    - T1020 - Automated Exfiltration
+    references:
+    - https://attack.mitre.org/techniques/T1114/003/
+    - https://docs.microsoft.com/en-us/microsoft-365/security/office-365-security/external-email-forwarding
+    severity: high
+  name: M365 - Mailbox Server-Side Forwarding Configured
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-mailbox-forward
+    max_count: 3
+    period: 1h

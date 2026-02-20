@@ -1,0 +1,40 @@
+# M365 - Application Consent Granted
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: Consent to application.
+  op: exists
+  path: event/ObjectId
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Consent was granted to an application. This could be a consent phishing attack where a malicious app tricks
+      users into granting permissions.
+    false_positives:
+    - Legitimate application consent by users
+    - Admin-approved applications
+    - Known third-party integrations
+    investigation_steps:
+    - Identify the application that received consent
+    - Review permissions granted to the application
+    - Check if consent was tenant-wide (admin consent) or user-level
+    - Verify the application publisher
+    - Contact user to confirm they intended to grant consent
+    mitre_attack:
+    - T1528 - Steal Application Access Token
+    - T1550.001 - Use Alternate Authentication Material: Application Access Token
+    references:
+    - https://attack.mitre.org/techniques/T1528/
+    - https://docs.microsoft.com/en-us/azure/active-directory/develop/application-consent-experience
+    severity: medium
+  name: M365 - Application Consent Granted
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-consent
+    max_count: 10
+    period: 1h

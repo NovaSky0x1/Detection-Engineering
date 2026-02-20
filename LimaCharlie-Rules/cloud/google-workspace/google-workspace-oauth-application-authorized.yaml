@@ -1,0 +1,60 @@
+# Google Workspace - OAuth Application Authorized
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: low
+
+detect:
+  event: CLOUD_NOTIFICATION
+  op: or
+  rules:
+  - op: is
+    path: event/protoPayload/methodName
+    value: google.admin.AdminService.authorizeApplication
+  - op: is
+    path: event/protoPayload/methodName
+    value: google.login.LoginService.tokenGrant
+  - op: is
+    path: event/protoPayload/metadata/event/0/eventName
+    value: AUTHORIZE_APPLICATION
+  - op: is
+    path: event/protoPayload/metadata/event/0/eventName
+    value: GRANT_DELEGATED_ADMIN_PRIVILEGES
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: BASELINE visibility rule that detects when users grant OAuth applications access to their Google Workspace
+      account. Intentionally broad for correlation purposes, not high-severity alerting.
+    false_positives:
+    - All legitimate OAuth grants including Google Workspace Marketplace apps
+    - Third-party productivity tools (Zoom, Slack, DocuSign, Salesforce)
+    - Browser extensions requiring Google Workspace access
+    - Mobile applications integrating with Google Workspace
+    - Single Sign-On (SSO) integrations
+    - Internal applications developed by the organization
+    investigation_steps:
+    - Identify the application name and client ID from the event parameters
+    - Check the scopes granted to the application
+    - Verify if the application is on the organization's approved list
+    - Determine if the user legitimately initiated this authorization
+    - Review the user's recent activity for other signs of compromise
+    - Investigate if multiple users are authorizing the same suspicious application
+    - If suspicious, revoke the application's access via Google Workspace Admin Console
+    mitre_attack:
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    - T1199 - Trusted Relationship
+    - T1550.001 - Use Alternate Authentication Material: Application Access Token
+    references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://attack.mitre.org/techniques/T1199/
+    - https://attack.mitre.org/techniques/T1550/001/
+    - https://support.google.com/a/answer/7281227
+    severity: low
+  name: Google Workspace - OAuth Application Authorized (Baseline)
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.protoPayload.authenticationInfo.principalEmail }}'
+    - google-oauth-baseline
+    max_count: 3
+    period: 24h

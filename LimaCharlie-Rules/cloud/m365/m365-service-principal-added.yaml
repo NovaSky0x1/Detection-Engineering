@@ -1,0 +1,33 @@
+# M365 - Service Principal Added
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: Add service principal.
+  op: exists
+  path: event/ObjectId
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A new service principal was added to the tenant. Service principals are used for application identity and
+      could be used for persistent access if maliciously created.
+    false_positives:
+    - New enterprise application deployments
+    - Azure resource deployments creating managed identities
+    - Marketplace app installations
+    mitre_attack:
+    - T1136.003 - Create Account: Cloud Account
+    - T1098.001 - Account Manipulation: Additional Cloud Credentials
+    references:
+    - https://attack.mitre.org/techniques/T1136/003/
+    - https://docs.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals
+    severity: medium
+  name: M365 - Service Principal Added
+  suppression:
+    is_global: true
+    keys:
+    - m365-sp-added
+    max_count: 10
+    period: 1h

@@ -1,0 +1,52 @@
+# M365 - Group Assigned to Directory Role
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  events:
+  - Add member to role
+  - Add member to role in PIM completed
+  - Add eligible member to role in PIM requested (permanent)
+  op: is
+  path: event/TargetResources/?/Type
+  value: Group
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A group was assigned to an Entra ID directory role, granting privileged role permissions to all members of
+      that group. Attackers can assign groups they control to powerful roles, scaling privilege escalation across many users
+      simultaneously.
+    false_positives:
+    - Legitimate privileged access management implementations
+    - Role-based access control administrative workflows
+    - Approved PIM group activations
+    - Planned organizational changes to delegation models
+    - Break-glass or emergency access group configurations
+    investigation_steps:
+    - Identify which directory role was assigned to the group
+    - Determine the privilege level of the role
+    - Review current membership of the group
+    - Verify the user account that performed the role assignment
+    - Check if this is a PIM-enabled or permanent role assignment
+    - Review if the group was created recently
+    - Examine recent login activity for the administrator account
+    - Check for subsequent privileged actions by group members
+    mitre_attack:
+    - T1098.003 - Account Manipulation: Additional Cloud Roles
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    - T1484 - Domain Policy Modification
+    references:
+    - https://attack.mitre.org/techniques/T1098/003/
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://docs.microsoft.com/en-us/azure/active-directory/roles/groups-concept
+    severity: critical
+  name: M365 - Group Assigned to Directory Role
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-group-role
+    max_count: 3
+    period: 24h

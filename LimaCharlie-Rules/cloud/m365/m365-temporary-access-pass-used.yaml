@@ -1,0 +1,57 @@
+# M365 - Temporary Access Pass Used
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: UserLoggedIn
+  op: or
+  rules:
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Temporary Access Pass
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: temporaryAccessPass
+  - op: contains
+    path: event/AuthenticationMethodUsed
+    value: Temporary Access Pass
+  - op: contains
+    path: event/AuthenticationMethodUsed
+    value: temporaryAccessPass
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A user successfully authenticated using a Temporary Access Pass (TAP). While legitimate for account recovery,
+      monitoring TAP usage helps detect unauthorized access from compromised administrator accounts.
+    false_positives:
+    - Legitimate user account recovery after lockout
+    - New employee initial login during onboarding
+    - Help desk assisted password reset procedures
+    - Contractor or temporary worker access setup
+    - Testing of authentication flows by IT
+    investigation_steps:
+    - Verify if a TAP was legitimately issued for this user
+    - Check the source IP address and geolocation
+    - Review the time of login against expected business hours
+    - Examine what actions the user took after authentication
+    - Verify if the user subsequently registered permanent MFA methods
+    - Check for any unusual resource access or privilege escalation
+    mitre_attack:
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    - T1556 - Modify Authentication Process
+    - T1110 - Brute Force
+    references:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://attack.mitre.org/techniques/T1556/
+    - https://docs.microsoft.com/en-us/azure/active-directory/authentication/howto-authentication-temporary-access-pass
+    severity: medium
+  name: M365 - Temporary Access Pass Used
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-tap-used
+    max_count: 3
+    period: 24h

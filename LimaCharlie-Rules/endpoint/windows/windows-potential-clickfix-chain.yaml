@@ -1,0 +1,182 @@
+# Windows - Potential ClickFix Chain
+# LimaCharlie D&R Rule
+# Author: Josh Strickland
+# Severity: high
+
+detect:
+  event: NEW_PROCESS
+  op: and
+  rules:
+  - op: is windows
+  - case sensitive: false
+    op: ends with
+    path: event/PARENT/FILE_PATH
+    value: explorer.exe
+  - op: or
+    rules:
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: powershell.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: pwsh.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: cmd.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: wscript.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: cscript.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: mshta.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: certutil.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: bitsadmin.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: rundll32.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: regsvr32.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: msiexec.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: regasm.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: msbuild.exe
+    - case sensitive: false
+      op: ends with
+      path: event/FILE_PATH
+      value: wmic.exe
+  - not: true
+    op: or
+    rules:
+    - case sensitive: false
+      op: starts with
+      path: event/COMMAND_LINE
+      value: '"C:\Program Files\'
+    - case sensitive: false
+      op: starts with
+      path: event/COMMAND_LINE
+      value: '"C:\Program Files (x86)\'
+    - case sensitive: false
+      op: starts with
+      path: event/COMMAND_LINE
+      value: C:\Program Files\
+    - case sensitive: false
+      op: starts with
+      path: event/COMMAND_LINE
+      value: C:\Program Files (x86)\
+  - op: or
+    rules:
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*\s-e(nc|nco|ncod|ncode|ncoded|ncodedC|ncodedCo|ncodedCom|ncodedComm|ncodedComma|ncodedComman|ncodedCommand)\s+[A-Za-z0-9+/=]{50,}.*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*(downloadstring|downloadfile).*\|.*(iex|invoke-expression).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*(invoke-webrequest|iwr|wget|curl).*\|.*(iex|invoke-expression).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*net\.webclient.*\.(downloadstring|downloadfile).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*(-w hidden|-windowstyle hidden).*(http|downloadstring|downloadfile|invoke-webrequest).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*bypass.*(http|downloadstring|downloadfile|invoke-webrequest|iex).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*certutil.*-urlcache.*(http|ftp).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*certutil.*-decode.*\.(exe|dll|bat|ps1|vbs).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*bitsadmin.*/transfer.*(http|ftp).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*mshta.*(http|javascript:|vbscript:).*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*rundll32.*javascript:.*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*rundll32.*,.*http.*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*regsvr32.*/s\s+/u\s+/i:http.*scrobj\.dll.*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*wmic.*process call create.*http.*
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*(\\temp\\|\\downloads\\|\\appdata\\local\\temp\\).*\.(exe|bat|cmd|ps1|vbs).*
+respond:
+- action: report
+  metadata:
+    author: Josh Strickland
+    description: Detects potential ClickFix attack where explorer.exe spawns PowerShell variants, scripting engines, or LOLBins
+      with suspicious command arguments via Run dialog (Win+R).
+    falsepositives:
+    - Legitimate administrative PowerShell scripts launched via Run dialog
+    - IT management tools using encoded commands
+    - Software deployment using msiexec or bitsadmin
+    - Web developers testing scripts with mshta or rundll32
+    - System administrators using certutil for certificate management
+    level: high
+    references:
+    - https://blog.sekoia.io/clickfix-tactic-the-phantom-meet/
+    - https://detect.fyi/hunting-clickfix-initial-access-techniques-8c1b38d5ef9b
+    - https://lolbas-project.github.io/
+    - https://www.microsoft.com/en-us/security/blog/2024/08/21/think-before-you-clickfix-analyzing-the-clickfix-social-engineering-technique/
+    tags:
+    - attack.initial_access
+    - attack.t1204.002
+    - attack.execution
+    - attack.t1059.001
+    - attack.t1059.003
+    - attack.t1059.005
+    - attack.t1059.007
+    - attack.defense_evasion
+    - attack.t1218
+  name: Potential ClickFix Chain

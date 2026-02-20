@@ -1,0 +1,50 @@
+# M365 - Inbox Rule with Deletion or Hide Actions
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  events:
+  - New-InboxRule
+  - Set-InboxRule
+  op: or
+  rules:
+  - op: is
+    path: event/Parameters/?/Name
+    value: DeleteMessage
+  - op: is
+    path: event/Parameters/?/Name
+    value: SoftDeleteMessage
+  - op: is
+    path: event/Parameters/?/Name
+    value: MarkAsRead
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: An inbox rule was created that deletes or marks messages as read. Attackers use these rules to hide their
+      activity from the mailbox owner.
+    false_positives:
+    - Spam cleanup rules
+    - Newsletter auto-delete rules
+    - Legitimate email management
+    investigation_steps:
+    - Review what criteria triggers the rule
+    - Check if rule targets security alerts or password reset emails
+    - Verify with user if they created this rule
+    - Look for companion forwarding rules
+    mitre_attack:
+    - T1564.008 - Hide Artifacts: Email Hiding Rules
+    - T1070.008 - Indicator Removal: Clear Mailbox Data
+    references:
+    - https://attack.mitre.org/techniques/T1564/008/
+    - https://attack.mitre.org/techniques/T1070/008/
+    severity: high
+  name: M365 - Inbox Rule with Deletion or Hide Actions
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-inbox-delete
+    max_count: 3
+    period: 1h

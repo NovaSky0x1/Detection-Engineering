@@ -1,0 +1,67 @@
+# Google Workspace - Email Forwarding Enabled
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: CLOUD_NOTIFICATION
+  op: or
+  rules:
+  - op: is
+    path: event/protoPayload/methodName
+    value: google.admin.AdminService.createEmailForwardingAddress
+  - op: is
+    path: event/protoPayload/methodName
+    value: google.admin.AdminService.enableEmailForwarding
+  - op: and
+    rules:
+    - op: is
+      path: event/protoPayload/methodName
+      value: google.admin.AdminService.changeEmailSetting
+    - op: or
+      rules:
+      - op: contains
+        path: event/protoPayload/metadata/event/0/eventName
+        value: FORWARD
+      - op: is
+        path: event/protoPayload/metadata/event/0/eventName
+        value: CHANGE_EMAIL_SETTING
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Detects account-level email forwarding configured to send copies of all incoming mail to another address,
+      which is a common persistence and exfiltration technique used in BEC attacks.
+    false_positives:
+    - Legitimate forwarding for personal use approved by organization policy
+    - Vacation auto-forward configurations
+    - Forwarding to company archive mailboxes or compliance systems
+    - IT-approved forwarding policies for specific business needs
+    investigation_steps:
+    - Identify the forwarding destination address from event parameters
+    - Determine if the destination is an internal or external domain
+    - Verify legitimacy with the account owner via out-of-band communication
+    - Review recent account activity for compromise indicators
+    - Check for other suspicious email settings changes
+    - Verify if forwarding was user-initiated or admin-configured
+    - Check if the forwarding address has been used in other accounts
+    mitre_attack:
+    - T1114.003 - Email Collection: Email Forwarding Rule
+    - T1020 - Automated Exfiltration
+    - T1048.003 - Exfiltration Over Alternative Protocol: Exfiltration Over Unencrypted Non-C2 Protocol
+    - T1567.002 - Exfiltration Over Web Service: Exfiltration to Cloud Storage
+    references:
+    - https://attack.mitre.org/techniques/T1114/003/
+    - https://attack.mitre.org/techniques/T1020/
+    - https://attack.mitre.org/techniques/T1048/003/
+    - https://attack.mitre.org/techniques/T1567/002/
+    - https://www.fbi.gov/scams-and-safety/common-scams-and-crimes/business-email-compromise
+    severity: high
+  name: Google Workspace - Email Forwarding Enabled
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.protoPayload.authenticationInfo.principalEmail }}'
+    - google-workspace-email-forwarding
+    max_count: 1
+    period: 24h

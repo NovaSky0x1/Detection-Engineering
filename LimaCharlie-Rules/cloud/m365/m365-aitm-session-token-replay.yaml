@@ -1,0 +1,79 @@
+# M365 - AiTM Session Token Replay
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: critical
+
+detect:
+  event: UserLoggedIn
+  op: or
+  rules:
+  - op: contains
+    path: event/AuthenticationDetails/?/authenticationMethod
+    value: claim
+  - op: contains
+    path: event/AuthenticationDetails/?/authenticationMethod
+    value: previously satisfied
+  - op: contains
+    path: event/AuthenticationDetails/?/authenticationMethod
+    value: Previously satisfied
+  - op: contains
+    path: event/MfaDetail/?/authMethod
+    value: claim
+  - op: contains
+    path: event/MfaDetail/?/authMethod
+    value: previously satisfied
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Previously satisfied
+  - op: contains
+    path: event/ExtendedProperties/?/Value
+    value: claim in the token
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A user authentication was completed using a session token where MFA was previously satisfied or satisfied
+      by claim in token rather than an interactive MFA challenge. This is a strong indicator of Adversary-in-the-Middle (AiTM)
+      phishing and session token replay attacks.
+    false_positives:
+    - Legitimate SSO scenarios where tokens are exchanged between trusted applications
+    - OAuth token exchanges in properly configured federated environments
+    - Mobile app authentication flows that cache tokens
+    - Azure AD Seamless SSO in hybrid environments
+    - Conditional Access policy token satisfaction in some edge cases
+    - Browser session resumption after legitimate authentication
+    investigation_steps:
+    - Identify the user account that authenticated with token replay
+    - Review the source IP address and geolocation of this login
+    - Check for recent logins from the same user from different IPs/locations
+    - Look for preceding authentic authentication from the user's normal location
+    - Review user agent string for anomalies or headless browser indicators
+    - Check if the IP is associated with VPN, proxy, or hosting providers
+    - Examine what actions were taken immediately after this authentication
+    - Look for data exfiltration, inbox rule creation, or privilege escalation
+    - Review the user's recent emails for phishing messages
+    - Check for mailbox forwarding rules or OAuth app consents after login
+    - Verify if user reported suspicious authentication requests
+    - Look for other users in the organization with similar token replay patterns
+    - Review Conditional Access policies that may have been bypassed
+    mitre_attack:
+    - T1539 - Steal Web Session Cookie
+    - T1185 - Browser Session Hijacking
+    - T1566.002 - Phishing: Spearphishing Link
+    - T1550.004 - Use Alternate Authentication Material: Web Session Cookie
+    references:
+    - https://attack.mitre.org/techniques/T1539/
+    - https://attack.mitre.org/techniques/T1185/
+    - https://attack.mitre.org/techniques/T1550/004/
+    - https://www.microsoft.com/security/blog/2022/07/12/from-cookie-theft-to-bec-attackers-use-aitm-phishing-sites-as-entry-point-to-further-financial-fraud/
+    - https://www.microsoft.com/security/blog/2022/11/16/token-tactics-how-to-prevent-detect-and-respond-to-cloud-token-theft/
+    - https://github.com/kgretzky/evilginx2
+    severity: critical
+  name: M365 - AiTM Session Token Replay
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-aitm-token
+    max_count: 2
+    period: 1h

@@ -1,0 +1,40 @@
+# M365 - Login After MFA Change from Different IP
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: Update user.
+  op: or
+  rules:
+  - op: contains
+    path: event/ModifiedProperties/?/Name
+    value: StrongAuthenticationPhoneAppDetail
+  - op: contains
+    path: event/ModifiedProperties/?/Name
+    value: StrongAuthenticationMethod
+  with events:
+    count: 1
+    event: UserLoggedIn
+    op: exists
+    path: event/UserId
+    within: 3600
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A login occurred shortly after MFA methods were modified. Attackers often add their own MFA device then log
+      in from their infrastructure.
+    false_positives:
+    - Legitimate MFA enrollment followed by testing
+    investigation_steps:
+    - Review what MFA change was made
+    - Check if login IP is associated with known user locations
+    - Verify with user if they made the MFA change
+    mitre_attack:
+    - T1556.006 - Modify Authentication Process: Multi-Factor Authentication
+    - T1078 - Valid Accounts
+    references:
+    - https://attack.mitre.org/techniques/T1556/006/
+    severity: high
+  name: M365 - Login After MFA Change from Different IP

@@ -1,0 +1,63 @@
+# M365 - Multiple Failed Logins Followed by Success
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: UserLoginFailed
+  op: and
+  rules:
+  - op: exists
+    path: event/UserId
+  - not: true
+    op: is
+    path: event/UserId
+    value: Not Available
+  with events:
+    count: 10
+    event: UserLoginFailed
+    op: is
+    path: event/UserId
+    value: '{{ .event.UserId }}'
+    with events:
+      count: 1
+      event: UserLoggedIn
+      op: and
+      rules:
+      - op: is
+        path: event/UserId
+        value: '{{ .event.UserId }}'
+      - op: is
+        path: event/ResultStatus
+        value: Success
+      within: 300
+    within: 600
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Multiple failed login attempts (10+) were followed by a successful login. This pattern is consistent with
+      password spraying or credential stuffing attacks.
+    false_positives:
+    - Users with persistent password issues
+    - Password manager sync issues across multiple devices
+    investigation_steps:
+    - Review the number of failed attempts
+    - Check if failures and success came from same or different IPs
+    - Verify with user if they had login issues
+    - Check for password reset requests around this time
+    mitre_attack:
+    - T1110.001 - Brute Force: Password Guessing
+    - T1110.003 - Brute Force: Password Spraying
+    - T1110.004 - Brute Force: Credential Stuffing
+    references:
+    - https://attack.mitre.org/techniques/T1110/
+    severity: high
+  name: M365 - Multiple Failed Logins Followed by Success
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-brute-force
+    max_count: 3
+    period: 1h

@@ -1,0 +1,59 @@
+# M365 - Rapid IP Switching on Login
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: UserLoggedIn
+  op: and
+  rules:
+  - op: exists
+    path: event/UserId
+  - op: exists
+    path: event/ClientIP
+  - not: true
+    op: is
+    path: event/UserId
+    value: Not Available
+  with events:
+    count: 2
+    event: UserLoggedIn
+    op: and
+    rules:
+    - op: is
+      path: event/UserId
+      value: '{{ .event.UserId }}'
+    - not: true
+      op: is
+      path: event/ClientIP
+      value: '{{ .event.ClientIP }}'
+    within: 300
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: User logged in from multiple different IP addresses within a short time window. Could indicate session hijacking,
+      token theft, or credential sharing.
+    false_positives:
+    - VPN reconnections
+    - Mobile users switching between WiFi and cellular
+    - Load balanced proxies
+    investigation_steps:
+    - Review the IP addresses involved
+    - Check geographic locations of the IPs
+    - Verify with user if they were switching networks
+    - Look for other suspicious activity on the account
+    mitre_attack:
+    - T1550.001 - Use Alternate Authentication Material: Application Access Token
+    - T1078 - Valid Accounts
+    references:
+    - https://attack.mitre.org/techniques/T1550/001/
+    severity: medium
+  name: M365 - Rapid IP Switching on Login
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-ip-switch
+    max_count: 3
+    period: 1h

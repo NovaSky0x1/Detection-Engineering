@@ -1,0 +1,9 @@
+# Seal Sensors Upon Deployment
+# LimaCharlie D&R Rule
+
+detect:
+  event: CONNECTED
+  name: windows
+  op: is platform
+respond:
+- action: seal

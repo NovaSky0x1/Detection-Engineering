@@ -1,0 +1,56 @@
+# M365 - Nested Group Added to Privileged Group
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: Add member to group
+  op: or
+  rules:
+  - op: is
+    path: event/TargetResources/?/Type
+    value: Group
+  - op: and
+    rules:
+    - op: is
+      path: event/ModifiedProperties/?/Name
+      value: Group.Member
+    - op: contains
+      path: event/ModifiedProperties/?/NewValue
+      value: '"Type":"Group"'
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A group object was added as a member to another group (nested group membership). Attackers abuse this for
+      stealthy privilege escalation by adding a group they control to a privileged group.
+    false_positives:
+    - Legitimate organizational structure changes
+    - Department or team restructuring
+    - Role-based access control implementations
+    - Delegated administration group hierarchies
+    investigation_steps:
+    - Identify the parent group that received the nested group
+    - Check if the parent group has privileged roles
+    - Identify the nested group that was added
+    - Review membership of the nested group
+    - Verify the user account that performed the group nesting
+    - Check if this is part of a documented organizational change
+    - Review recent login activity for the administrator account
+    mitre_attack:
+    - T1098.003 - Account Manipulation: Additional Cloud Roles
+    - T1136.003 - Create Account: Cloud Account
+    - T1069.003 - Permission Groups Discovery: Cloud Groups
+    references:
+    - https://attack.mitre.org/techniques/T1098/003/
+    - https://attack.mitre.org/techniques/T1069/003/
+    - https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-groups-membership-azure-portal
+    severity: high
+  name: M365 - Nested Group Added to Privileged Group
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-nested-group
+    max_count: 5
+    period: 24h

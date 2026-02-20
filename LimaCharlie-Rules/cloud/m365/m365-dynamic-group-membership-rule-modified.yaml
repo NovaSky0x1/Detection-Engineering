@@ -1,0 +1,54 @@
+# M365 - Dynamic Group Membership Rule Modified
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: Update group
+  op: or
+  rules:
+  - op: is
+    path: event/ModifiedProperties/?/Name
+    value: MembershipRule
+  - op: is
+    path: event/ModifiedProperties/?/Name
+    value: MembershipRuleProcessingStat
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A dynamic group membership rule was modified. Attackers with sufficient privileges modify these rules to
+      automatically grant themselves membership in privileged groups via attribute matching.
+    false_positives:
+    - Legitimate organizational restructuring requiring rule updates
+    - Corrections to misconfigured membership rules
+    - Security team adjustments to group automation
+    - HR-driven changes to department or role-based rules
+    - Migration from static to dynamic groups or vice versa
+    investigation_steps:
+    - Identify which group had its membership rule modified
+    - Check if the group has privileged roles or sensitive resource access
+    - Review the old membership rule versus the new membership rule
+    - Determine what user attributes the new rule matches on
+    - Verify the user account that modified the rule
+    - Check if the rule change resulted in new members being added
+    - Identify who benefited from the rule change
+    - Examine recent login activity for the administrator account
+    - Review if there was an approved change request or ticket
+    mitre_attack:
+    - T1098.003 - Account Manipulation: Additional Cloud Roles
+    - T1484 - Domain Policy Modification
+    - T1069.003 - Permission Groups Discovery: Cloud Groups
+    references:
+    - https://attack.mitre.org/techniques/T1098/003/
+    - https://attack.mitre.org/techniques/T1484/
+    - https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/groups-dynamic-membership
+    severity: high
+  name: M365 - Dynamic Group Membership Rule Modified
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-dynamic-rule
+    max_count: 3
+    period: 24h

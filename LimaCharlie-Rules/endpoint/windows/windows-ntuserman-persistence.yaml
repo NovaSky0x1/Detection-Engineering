@@ -1,0 +1,66 @@
+# Windows - NTUSER.MAN Persistence
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  event: FILE_CREATE
+  op: and
+  rules:
+  - case sensitive: false
+    op: matches
+    path: event/FILE_PATH
+    re: ^[a-zA-Z]:\\Users\\.*\\NTUSER\.MAN$
+  - not: true
+    op: is
+    path: event/PARENT/PROCESS_ID
+    value: 4
+  - not: true
+    op: is
+    path: routing/integrity_level
+    value: SYSTEM
+  - not: true
+    op: or
+    rules:
+    - case sensitive: false
+      op: matches
+      path: event/PARENT/FILE_PATH
+      re: ^[a-zA-Z]:\\Windows\\System32\\userinit\.exe$
+    - case sensitive: false
+      op: matches
+      path: event/PARENT/FILE_PATH
+      re: ^[a-zA-Z]:\\Windows\\System32\\winlogon\.exe$
+  - not: true
+    op: and
+    rules:
+    - case sensitive: false
+      op: matches
+      path: event/PARENT/FILE_PATH
+      re: ^[a-zA-Z]:\\Windows\\System32\\svchost\.exe$
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: -k UserProfileService -p -s ProfSvc
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Identifies suspicious creation of the NTUSER.MAN file within user profile directories, a lesser-known persistence
+      technique that abuses mandatory user profiles. By planting a crafted NTUSER.MAN, an attacker can force Windows to load
+      attacker-controlled registry settings at every logon.
+    false_positives:
+    - Legitimate deployment of mandatory user profiles via Group Policy
+    - System administrators manually configuring mandatory profiles
+    - Automated desktop management tools deploying mandatory profiles
+    - Kiosk or public computer configurations
+    - Profile backup and restore operations during system migrations
+    mitre_attack:
+    - T1547 - Boot or Logon Autostart Execution
+    - T1547.001 - Registry Run Keys / Startup Folder
+    - TA0003 - Persistence
+    references:
+    - https://deceptiq.com/blog/ntuser-man-registry-persistence
+    - https://github.com/MHaggis/notes/tree/master/utilities/MandatoryProfilePersistence
+    - https://attack.mitre.org/techniques/T1547/001/
+    severity: high
+  name: Windows - NTUSER.MAN Mandatory Profile Persistence

@@ -1,0 +1,50 @@
+# M365 - Mailbox Permission Added
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: Add-MailboxPermission
+  op: and
+  rules:
+  - op: exists
+    path: event/ObjectId
+  - case sensitive: false
+    not: true
+    op: contains
+    path: event/ObjectId
+    value: DiscoverySearchMailbox
+  - case sensitive: false
+    not: true
+    op: starts with
+    path: event/UserId
+    value: NT AUTHORITY\SYSTEM
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Permissions were added to a mailbox. Attackers often grant themselves access to victim mailboxes for persistent
+      email collection.
+    false_positives:
+    - Legitimate delegate access for assistants
+    - Shared mailbox configurations
+    - IT administration
+    investigation_steps:
+    - Identify what permissions were granted
+    - Verify the business justification
+    - Check if the mailbox owner authorized this
+    mitre_attack:
+    - T1098.002 - Account Manipulation: Additional Email Delegate Permissions
+    - T1114.002 - Email Collection: Remote Email Collection
+    references:
+    - https://attack.mitre.org/techniques/T1098/002/
+    - https://attack.mitre.org/techniques/T1114/002/
+    severity: medium
+  name: M365 - Mailbox Permission Added
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-mailbox-perm
+    max_count: 10
+    period: 1h

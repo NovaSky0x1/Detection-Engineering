@@ -1,0 +1,66 @@
+# M365 - MFA Method Added or Modified
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: Update user.
+  op: or
+  rules:
+  - case sensitive: false
+    op: contains
+    path: event/ModifiedProperties/?/Name
+    value: StrongAuthenticationPhoneAppDetail
+  - case sensitive: false
+    op: contains
+    path: event/ModifiedProperties/?/Name
+    value: StrongAuthenticationMethod
+  - case sensitive: false
+    op: contains
+    path: event/ModifiedProperties/?/Name
+    value: StrongAuthenticationUserDetails
+  - op: and
+    rules:
+    - op: is
+      path: event/ModifiedProperties/?/Name
+      value: Included Updated Properties
+    - op: or
+      rules:
+      - case sensitive: false
+        op: contains
+        path: event/ModifiedProperties/?/NewValue
+        value: StrongAuthentication
+      - case sensitive: false
+        op: contains
+        path: event/ModifiedProperties/?/NewValue
+        value: PhoneAppDetail
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Detected addition or modification of MFA authentication methods for a user. This could indicate an attacker
+      establishing persistence after compromising an account.
+    false_positives:
+    - Legitimate MFA enrollment for new users
+    - Users changing their authenticator devices
+    - IT admins managing MFA for users
+    investigation_steps:
+    - Verify if the user initiated the MFA change
+    - Check for concurrent suspicious login activity
+    - Review source IP and device information
+    - Contact user to confirm legitimacy
+    mitre_attack:
+    - T1556.006 - Modify Authentication Process: Multi-Factor Authentication
+    - T1098 - Account Manipulation
+    references:
+    - https://attack.mitre.org/techniques/T1556/006/
+    - https://attack.mitre.org/techniques/T1098/
+    severity: medium
+  name: M365 - MFA Method Added or Modified
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.ObjectId }}'
+    - m365-mfa-change
+    max_count: 3
+    period: 1h

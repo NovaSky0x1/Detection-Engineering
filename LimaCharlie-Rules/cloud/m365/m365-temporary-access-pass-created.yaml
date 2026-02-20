@@ -1,0 +1,68 @@
+# M365 - Temporary Access Pass Created
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  events:
+  - Admin registered temporary access pass method
+  - User registered security info
+  op: or
+  rules:
+  - op: is
+    path: event/Operation
+    value: Admin registered temporary access pass method
+  - op: and
+    rules:
+    - op: is
+      path: event/Operation
+      value: User registered security info
+    - op: is
+      path: event/ModifiedProperties/?/Name
+      value: MethodRegistered
+    - op: or
+      rules:
+      - op: contains
+        path: event/ModifiedProperties/?/NewValue
+        value: TempAccessPass
+      - op: contains
+        path: event/ModifiedProperties/?/NewValue
+        value: Temporary Access Pass
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A Temporary Access Pass (TAP) was created for a user account. TAPs allow authentication without requiring
+      knowledge of the user's password or existing MFA methods. While legitimate for account recovery, attackers with admin
+      privileges abuse TAPs to establish unauthorized access.
+    false_positives:
+    - Legitimate account recovery for locked-out users
+    - New employee onboarding before MFA enrollment
+    - Help desk operations for password reset scenarios
+    - Planned account access for contractors
+    - Testing and validation of authentication flows
+    investigation_steps:
+    - Identify the target user account that received the TAP
+    - Verify the administrator who created the TAP
+    - Check if there was a legitimate help desk ticket
+    - Review the TAP expiration time and usage limits
+    - Examine recent login activity for the administrator account
+    - Check for any subsequent logins using the TAP
+    - Verify if the target user was expecting this access method
+    mitre_attack:
+    - T1098.005 - Account Manipulation: Device Registration
+    - T1556 - Modify Authentication Process
+    - T1078.004 - Valid Accounts: Cloud Accounts
+    references:
+    - https://attack.mitre.org/techniques/T1098/005/
+    - https://attack.mitre.org/techniques/T1556/
+    - https://docs.microsoft.com/en-us/azure/active-directory/authentication/howto-authentication-temporary-access-pass
+    severity: high
+  name: M365 - Temporary Access Pass Created
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.TargetUserOrGroupName }}'
+    - m365-tap-created
+    max_count: 2
+    period: 24h

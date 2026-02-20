@@ -1,0 +1,126 @@
+# M365 - Suspicious User Agent on Login
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  events:
+  - UserLoggedIn
+  - UserLoginFailed
+  op: or
+  rules:
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: axios
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: TruffleHog
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: python-requests
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: python-urllib
+  - case sensitive: false
+    op: matches
+    path: event/ExtendedProperties/?/Value
+    re: ^curl/.*
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Go-http-client
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: PostmanRuntime
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: HTTPie
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Scrapy
+  - case sensitive: false
+    op: matches
+    path: event/ExtendedProperties/?/Value
+    re: ^Wget/.*
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: WindowsPowerShell
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: node-fetch
+  - case sensitive: false
+    op: matches
+    path: event/ExtendedProperties/?/Value
+    re: ^Java/\d+.*
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Apache-HttpClient
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: okhttp
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Nuclei
+  - op: is
+    path: event/ExtendedProperties/?/Value
+    value: ''
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: BOT
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Burp
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: Nikto
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: sqlmap
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: AADInternals
+  - case sensitive: false
+    op: contains
+    path: event/ExtendedProperties/?/Value
+    value: ROADtools
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: Detected login attempt using a suspicious user agent commonly associated with automation tools, credential
+      stuffing, or security scanning.
+    false_positives:
+    - Legitimate automation scripts
+    - Security scanning tools used by IT
+    - DevOps automation
+    mitre_attack:
+    - T1078 - Valid Accounts
+    - T1110 - Brute Force
+    references:
+    - https://attack.mitre.org/techniques/T1078/
+    severity: medium
+  name: M365 - Suspicious User Agent on Login
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-suspicious-ua
+    max_count: 5
+    period: 1h

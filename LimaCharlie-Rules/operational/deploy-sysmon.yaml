@@ -1,0 +1,32 @@
+# Deploy-Sysmon
+# LimaCharlie D&R Rule
+
+detect:
+  event: CONNECTED
+  op: and
+  rules:
+  - name: windows
+    op: is platform
+  - op: is tagged
+    tag: deploy-sysmon
+respond:
+- action: task
+  command: put --payload-name sysmon --payload-path "C:\\Windows\\Temp\\sysmon.exe"
+- action: wait
+  duration: 10s
+- action: task
+  command: put --payload-name sysmon-config --payload-path "C:\\Windows\\Temp\\sysmon-config.xml"
+- action: wait
+  duration: 10s
+- action: task
+  command: run --shell-command "C:\\Windows\\Temp\\sysmon.exe -accepteula -i C:\\Windows\\Temp\\sysmon-config.xml"
+- action: wait
+  duration: 10s
+- action: task
+  command: file_del "C:\\Windows\\Temp\\sysmon.exe"
+- action: task
+  command: file_del "C:\\Windows\\Temp\\sysmon-config.xml"
+- action: remove tag
+  tag: deploy-sysmon
+- action: task
+  command: restart

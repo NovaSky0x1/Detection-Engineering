@@ -1,0 +1,51 @@
+# M365 - Inbox Forwarding Rule Created
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: high
+
+detect:
+  events:
+  - New-InboxRule
+  - Set-InboxRule
+  op: or
+  rules:
+  - op: is
+    path: event/Parameters/?/Name
+    value: ForwardTo
+  - op: is
+    path: event/Parameters/?/Name
+    value: ForwardAsAttachmentTo
+  - op: is
+    path: event/Parameters/?/Name
+    value: RedirectTo
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: An inbox rule was created that forwards or redirects email. This is a critical indicator of Business Email
+      Compromise (BEC) where attackers exfiltrate email or intercept communications.
+    false_positives:
+    - Legitimate forwarding rules for assistants
+    - Vacation auto-forward rules
+    - Department shared mailbox configurations
+    investigation_steps:
+    - Identify the destination email address in the forwarding rule
+    - Check if the destination is external to the organization
+    - Verify with the user if they created this rule
+    - Review recent login activity for the user
+    - Check for other suspicious rules on the same mailbox
+    mitre_attack:
+    - T1114.003 - Email Collection: Email Forwarding Rule
+    - T1564.008 - Hide Artifacts: Email Hiding Rules
+    references:
+    - https://attack.mitre.org/techniques/T1114/003/
+    - https://redcanary.com/blog/threat-detection/email-forwarding-rules/
+    severity: high
+  name: M365 - Inbox Forwarding Rule Created
+  suppression:
+    is_global: true
+    keys:
+    - '{{ .event.UserId }}'
+    - m365-inbox-forward
+    max_count: 3
+    period: 1h

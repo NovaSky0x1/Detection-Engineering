@@ -1,0 +1,211 @@
+# Windows - NetSupport RAT Activity
+# LimaCharlie D&R Rule
+# Author: Josh Strickland
+# Severity: high
+
+detect:
+  events:
+  - NEW_PROCESS
+  - NEW_DOCUMENT
+  - FILE_CREATE
+  op: or
+  rules:
+  - op: and
+    rules:
+    - op: is
+      path: routing/event_type
+      value: NEW_PROCESS
+    - op: or
+      rules:
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\(client32|uclient32|nclient32|client|uclient|nclient|rclient|sclient|tclient|xclient|pclient|gclient|vnclient|nsclient)\.exe$
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\NetSupport.*\\(client32|client|manager|gateway)\.exe$
+      - op: and
+        rules:
+        - op: or
+          rules:
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: client32
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: uclient
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: nsclient
+        - op: or
+          rules:
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \AppData\Roaming\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \AppData\Local\Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \ProgramData\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Users\Public\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Windows\Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Downloads\
+      - op: and
+        rules:
+        - op: or
+          rules:
+          - case sensitive: false
+            op: contains
+            path: event/COMMAND_LINE
+            value: NetSupport
+          - case sensitive: false
+            op: contains
+            path: event/COMMAND_LINE
+            value: NSM_
+          - case sensitive: false
+            op: contains
+            path: event/COMMAND_LINE
+            value: client32
+        - case sensitive: false
+          not: true
+          op: contains
+          path: event/FILE_PATH
+          value: \Program Files\
+  - op: and
+    rules:
+    - op: is
+      path: routing/event_type
+      value: NEW_DOCUMENT
+    - op: or
+      rules:
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\(client32|uclient32|nclient32|client|uclient|nclient|rclient|sclient|tclient|xclient|pclient|gclient|vnclient|nsclient)\.exe$
+      - op: and
+        rules:
+        - op: or
+          rules:
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: client32.exe
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: uclient32.exe
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: nsclient.exe
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: pciclient.exe
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: NSM_Service_Host.exe
+        - op: or
+          rules:
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \AppData\Roaming\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \AppData\Local\Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \ProgramData\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Users\Public\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Windows\Temp\
+          - case sensitive: false
+            op: contains
+            path: event/FILE_PATH
+            value: \Downloads\
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\(client32\.ini|nsm\.ini|nsm\.lic|NSM.*\.cfg|NetSupport.*\.ini)$
+  - op: and
+    rules:
+    - op: is
+      path: routing/event_type
+      value: FILE_CREATE
+    - op: or
+      rules:
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\(client32|uclient32|nclient32|nsclient|pciclient)\.exe$
+      - case sensitive: false
+        op: matches
+        path: event/FILE_PATH
+        re: .*\\(client32\.ini|nsm\.ini|nsm\.lic|NSM.*\.cfg)$
+respond:
+- action: report
+  metadata:
+    author: Josh Strickland
+    description: Detects NetSupport RAT activity including both execution and file drops. NetSupport Manager is legitimate
+      remote access software frequently weaponized by threat actors.
+    falsepositives:
+    - Legitimate NetSupport Manager installations used by IT support teams
+    - Authorized remote support sessions initiated by help desk personnel
+    - Managed Service Providers using NetSupport for client management
+    - Educational institutions using NetSupport School for classroom management
+    - Corporate environments with sanctioned NetSupport deployments
+    level: high
+    references:
+    - https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-259a
+    - https://attack.mitre.org/software/S0122/
+    - https://www.proofpoint.com/us/blog/threat-insight/netsupport-manager-rat-service-financially-motivated-campaigns
+    - https://www.huntress.com/blog/netsupport-manager-rat-installed-via-fake-update-notices
+    - https://redcanary.com/threat-detection-report/threats/netsupport-manager/
+    tags:
+    - attack.command_and_control
+    - attack.t1219
+    - attack.defense_evasion
+    - attack.t1036
+    - attack.t1036.005
+    - attack.persistence
+    - attack.t1547.001
+    - attack.initial_access
+    - attack.t1566
+    - attack.t1105
+    - attack.execution
+    - attack.t1204.002
+  name: NetSupport RAT Activity

@@ -1,0 +1,38 @@
+# M365 - New Application Added
+# LimaCharlie D&R Rule
+# Author: Joshua Strickland
+# Severity: medium
+
+detect:
+  event: Add application.
+  op: exists
+  path: event/ObjectId
+respond:
+- action: report
+  metadata:
+    author: Joshua Strickland
+    description: A new application was added to the Azure AD tenant. Review to ensure this is a legitimate application and
+      not a rogue app for persistence or data access.
+    false_positives:
+    - Legitimate application registrations by IT
+    - Third-party integrations
+    - Development and testing applications
+    investigation_steps:
+    - Identify who registered the application
+    - Review the application's permissions
+    - Check if application is from a known publisher
+    - Verify business justification for the application
+    mitre_attack:
+    - T1098.001 - Account Manipulation: Additional Cloud Credentials
+    - T1136.003 - Create Account: Cloud Account
+    references:
+    - https://attack.mitre.org/techniques/T1098/001/
+    - https://docs.microsoft.com/en-us/azure/active-directory/develop/app-registration-overview
+    severity: medium
+  name: M365 - New Application Added
+  suppression:
+    is_global: true
+    keys:
+    - m365-app-added
+    max_count: 10
+    period: 1h

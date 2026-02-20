@@ -1,0 +1,209 @@
+# Windows - React2Shell Node.js execSync
+# LimaCharlie D&R Rule
+# Author: Josh Strickland
+# Severity: critical
+
+detect:
+  event: NEW_PROCESS
+  op: and
+  rules:
+  - case sensitive: false
+    op: ends with
+    path: event/FILE_PATH
+    value: \cmd.exe
+  - case sensitive: false
+    op: contains
+    path: event/COMMAND_LINE
+    value: /d /s /c
+  - case sensitive: false
+    op: ends with
+    path: event/PARENT/FILE_PATH
+    value: \node.exe
+  - op: or
+    rules:
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: node_modules\next
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: next\dist\server
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: start-server.js
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: next dev
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: next start
+    - case sensitive: false
+      op: contains
+      path: event/PARENT/COMMAND_LINE
+      value: react-scripts
+  - op: or
+    rules:
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: whoami
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: powershell
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: pwsh
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: curl
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: wget
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: certutil
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: bitsadmin
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: mshta
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: wscript
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: cscript
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: regsvr32
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: rundll32
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: systeminfo
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: net user
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: net localgroup
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: netsh
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: sc.exe
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: reg add
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: reg query
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: wmic
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: ipconfig
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: nslookup
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: calc
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: notepad
+    - case sensitive: false
+      op: matches
+      path: event/COMMAND_LINE
+      re: .*\.(ps1|bat|vbs|js|exe).*
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: /c echo
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: base64
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: -enc
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: -encodedcommand
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: downloadstring
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: downloadfile
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: invoke-expression
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: iex
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: '&&'
+    - case sensitive: false
+      op: contains
+      path: event/COMMAND_LINE
+      value: ' | '
+respond:
+- action: report
+  metadata:
+    author: Josh Strickland
+    cve: CVE-2025-55182
+    description: Detects cmd.exe spawned by Node.js with Next.js/React context using the /d /s /c flag pattern typical of
+      child_process.execSync(), containing suspicious reconnaissance or post-exploitation commands. Strong indicator of CVE-2025-55182
+      (React2Shell) exploitation.
+    false_positives:
+    - Legitimate build scripts or development tools using cmd.exe
+    - Custom deployment scripts that execute system commands
+    mitre_attack:
+    - T1059.003 - Windows Command Shell
+    - T1190 - Exploit Public-Facing Application
+    references:
+    - https://react2shell.com/
+    - https://nodejs.org/api/child_process.html#child_processexecsynccommand-options
+    - https://github.com/msanft/CVE-2025-55182
+    severity: critical
+  name: React2Shell - Node.js execSync Suspicious Command
