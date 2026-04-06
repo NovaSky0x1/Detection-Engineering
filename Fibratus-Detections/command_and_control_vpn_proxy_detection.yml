@@ -34,39 +34,39 @@ references:
   - https://portswigger.net/kb/issues/00400200_vpn-detected
 
 condition: >
-  (kevt.name = 'CreateProcess'
+  (evt.name = 'CreateProcess'
     and ps.name endswith ('.exe')
     and (
-      kevt.arg[cmdline] icontains 'openvpn'
-      or kevt.arg[cmdline] icontains 'wireguard'
-      or kevt.arg[cmdline] icontains 'nordvpn'
-      or kevt.arg[cmdline] icontains 'expressvpn'
-      or kevt.arg[cmdline] icontains 'protonvpn'
-      or kevt.arg[cmdline] icontains 'surfshark'
-      or kevt.arg[cmdline] icontains 'cyberghost'
-      or kevt.arg[cmdline] icontains 'windscribe'
-      or kevt.arg[cmdline] icontains 'privateinternetaccess'
-      or kevt.arg[cmdline] icontains 'mullvad'
-      or kevt.arg[cmdline] icontains 'vpn.exe'
-      or kevt.arg[cmdline] icontains 'proxifier'
-      or kevt.arg[cmdline] icontains 'softether'
-      or kevt.arg[cmdline] icontains 'hide.me'
-      or kevt.arg[cmdline] icontains 'torguard'
-      or kevt.arg[cmdline] icontains 'psiphon'
-      or kevt.arg[cmdline] icontains 'hotspotshield'
-      or kevt.arg[cmdline] icontains 'stunnel'
-      or kevt.arg[cmdline] icontains 'ssh -D'
-      or kevt.arg[cmdline] icontains 'ssh -L'
-      or kevt.arg[cmdline] icontains 'ssh -R'
-      or kevt.arg[cmdline] icontains 'plink -D'
-      or kevt.arg[cmdline] icontains 'plink -L'
-      or kevt.arg[cmdline] icontains 'plink -R'
-      or kevt.arg[cmdline] icontains '-tunnel='
-      or kevt.arg[cmdline] icontains '-keygen'
-      or kevt.arg[cmdline] icontains 'sshd'
+      ps.child.cmdline icontains 'openvpn'
+      or ps.child.cmdline icontains 'wireguard'
+      or ps.child.cmdline icontains 'nordvpn'
+      or ps.child.cmdline icontains 'expressvpn'
+      or ps.child.cmdline icontains 'protonvpn'
+      or ps.child.cmdline icontains 'surfshark'
+      or ps.child.cmdline icontains 'cyberghost'
+      or ps.child.cmdline icontains 'windscribe'
+      or ps.child.cmdline icontains 'privateinternetaccess'
+      or ps.child.cmdline icontains 'mullvad'
+      or ps.child.cmdline icontains 'vpn.exe'
+      or ps.child.cmdline icontains 'proxifier'
+      or ps.child.cmdline icontains 'softether'
+      or ps.child.cmdline icontains 'hide.me'
+      or ps.child.cmdline icontains 'torguard'
+      or ps.child.cmdline icontains 'psiphon'
+      or ps.child.cmdline icontains 'hotspotshield'
+      or ps.child.cmdline icontains 'stunnel'
+      or ps.child.cmdline icontains 'ssh -D'
+      or ps.child.cmdline icontains 'ssh -L'
+      or ps.child.cmdline icontains 'ssh -R'
+      or ps.child.cmdline icontains 'plink -D'
+      or ps.child.cmdline icontains 'plink -L'
+      or ps.child.cmdline icontains 'plink -R'
+      or ps.child.cmdline icontains '-tunnel='
+      or ps.child.cmdline icontains '-keygen'
+      or ps.child.cmdline icontains 'sshd'
     ))
 
-  or (kevt.category = 'dns'
+  or (evt.category = 'dns'
     and dns.name in (
       'nordvpn.com',
       'expressvpn.com',
@@ -91,7 +91,7 @@ condition: >
       'stunnel.org'
     ))
 
-  or (kevt.category = 'network'
+  or (evt.category = 'network'
     and ps.name endswith ('.exe')
     and net.dip.names in (
       'nordvpn.com',
@@ -132,9 +132,9 @@ output: |
   - Command Line: %ps.cmdline
   - Parent Process: %ps.parent.name (PPID: %ps.ppid)
 
-  - Signature Status: %pe.is_signed
+  - Signature Status: %ps.signature.exists
   - Cert Subject: %pe.cert.subject
   - Cert Issuer: %pe.cert.issuer
   - Process is Modified?: %pe.is_modified
 
-min-engine-version: 2.0.0
+min-engine-version: 3.0.0

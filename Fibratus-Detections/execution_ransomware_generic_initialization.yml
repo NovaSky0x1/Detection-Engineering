@@ -36,7 +36,7 @@ condition: >
     maxspan 27ms
     by ps.uuid
     |(
-      kevt.name = 'MapViewFile'
+      evt.name = 'MapViewFile'
       and file.view.type = 'PAGEFILE'
       and file.view.size = 16384
       and not (
@@ -54,21 +54,21 @@ condition: >
       )
     )|
     |(
-      kevt.name = 'CreateFile'
-      and kevt.arg[create_options] icontains 'DIRECTORY_FILE'
+      evt.name = 'CreateFile'
+      and file.create_options icontains 'DIRECTORY_FILE'
       and file.path imatches 'C:\\Windows'
     )|
     |(
-      kevt.name = 'MapViewFile'
+      evt.name = 'MapViewFile'
       and file.view.type = 'IMAGE'
       and file.path imatches '*\\wow64.dll'
     )|
     |(
-      kevt.name = 'EnumDirectory'
-      and kevt.arg[directory] imatches 'C:\\Windows\\System32'
+      evt.name = 'EnumDirectory'
+      and file.path imatches 'C:\\Windows\\System32'
     )|
     |(
-      kevt.name = 'MapViewFile'
+      evt.name = 'MapViewFile'
       and file.view.type = 'IMAGE'
       and file.path imatches (
         '*\\kernel32.dll',
@@ -78,7 +78,7 @@ condition: >
 
 output: |
   Generic Ransomware Initialization Pattern detected:
-  Event: %kevt.name on %file.name
+  Event: %file.name
 
   Process Information:
 
@@ -86,7 +86,7 @@ output: |
   - Command Line: %ps.cmdline
   - Parent Process: %ps.parent.name (PPID: %ps.ppid)
 
-  - Signature Status: %pe.is_signed
+  - Signature Status: %ps.signature.exists
   - Cert Subject: %pe.cert.subject
   - Cert Issuer: %pe.cert.issuer
   - Process is Modified?: %pe.is_modified
@@ -94,4 +94,4 @@ output: |
 severity: critical
 
 
-min-engine-version: 2.0.0
+min-engine-version: 3.0.0

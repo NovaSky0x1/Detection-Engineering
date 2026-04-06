@@ -35,14 +35,14 @@ condition: >
 
     |(
       (
-        image.signature.type = 'NONE'
+        module.signature.type = 'NONE'
           or
-        image.signature.level = 'UNCHECKED'
+        module.signature.level = 'UNCHECKED'
           or
-        pe.is_trusted = false
+        ps.signature.trusted = false
       )
         and
-      kevt.name = 'CreateFile' 
+      evt.name = 'CreateFile' 
       and file.operation = 'OPEN'
       and file.status = 'Success'
       and file.path imatches 
@@ -77,7 +77,7 @@ condition: >
     )|
 
     |(
-      kevt.name = 'RenameFile'
+      evt.name = 'RenameFile'
       and file.path imatches 
         (
           '?:\\Users\\*\\Desktop\\*',
@@ -96,7 +96,7 @@ condition: >
     )|  
 
     |(
-      kevt.name = 'WriteFile'
+      evt.name = 'WriteFile'
       and file.io.size > 0
       and file.path imatches 
         (
@@ -124,11 +124,11 @@ output: |
   - Command Line: %ps.cmdline
   - Parent Process: %ps.parent.name (PPID: %ps.ppid)
 
-  - Signature Status: %pe.is_signed
+  - Signature Status: %ps.signature.exists
   - Cert Subject: %pe.cert.subject
   - Cert Issuer: %pe.cert.issuer
   - Process is Modified?: %pe.is_modified
   
 severity: critical
 
-min-engine-version: 2.0.0
+min-engine-version: 3.0.0

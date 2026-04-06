@@ -35,27 +35,27 @@ condition: >
     maxspan 45ms
     by ps.uuid
     |(
-      kevt.name = 'MapViewFile'  
+      evt.name = 'MapViewFile'  
       and file.view.type = 'PAGEFILE'
       and file.view.size = 16384
     )|
     |(
-      kevt.name = 'CreateFile'
+      evt.name = 'CreateFile'
       and file.path imatches 'C:\\Windows' 
-      and kevt.arg[type] = 'Directory'
+      and file.type = 'Directory'
     )|  
     |(
-      kevt.name = 'MapViewFile'
+      evt.name = 'MapViewFile'
       and file.view.type = 'IMAGE' 
       and file.path imatches 'C:\\Windows\\System32\\wow64*.dll'
     )|
     |(  
-      kevt.name = 'CreateFile'
+      evt.name = 'CreateFile'
       and file.path imatches 'C:\\Users\\*\\Desktop\\' 
-      and kevt.arg[type] = 'Directory'
+      and file.type = 'Directory'
     )|
     |(
-      kevt.name = 'MapViewFile'  
+      evt.name = 'MapViewFile'  
       and file.view.type = 'IMAGE'
       and file.path imatches 'C:\\Windows\\SysWOW64\\*.dll'  
     )|
@@ -63,7 +63,7 @@ condition: >
 output: |
   Ransomware or Malware process detected:
   Image Path: %ps.exe
-  Suspect File I/O: %kevt.name on %file.name
+  Suspect File I/O: %file.name
 
   Process Information:
 
@@ -71,11 +71,11 @@ output: |
   - Command Line: %ps.cmdline
   - Parent Process: %ps.parent.name (PPID: %ps.ppid)
 
-  - Signature Status: %pe.is_signed
+  - Signature Status: %ps.signature.exists
   - Cert Subject: %pe.cert.subject
   - Cert Issuer: %pe.cert.issuer
   - Process is Modified?: %pe.is_modified
 
 severity: critical  
 
-min-engine-version: 2.0.0
+min-engine-version: 3.0.0

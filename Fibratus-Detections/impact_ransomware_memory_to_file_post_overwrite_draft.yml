@@ -36,7 +36,7 @@ condition: >
     by file.object
 
     |(
-      kevt.name = 'CreateFile'
+      evt.name = 'CreateFile'
       and file.operation = 'OPEN'
       and file.status = 'Success'
 
@@ -59,7 +59,7 @@ condition: >
       )
     )|
     |(
-      kevt.name = 'ReadFile'
+      evt.name = 'ReadFile'
       and file.path imatches '?:\\Users\\*'
       and not file.path imatches '?:\\Users\\*\\AppData\\*'
       and not file.path imatches '?:\\Windows\\*'
@@ -67,7 +67,7 @@ condition: >
       and not file.path imatches '?:\\ProgramData\\*'
     )|
     |(
-      kevt.name = 'WriteFile'
+      evt.name = 'WriteFile'
       and file.path imatches '?:\\Users\\*'
       and not file.path imatches '?:\\Users\\*\\AppData\\*'
       and not file.path imatches '?:\\Windows\\*'
@@ -75,7 +75,7 @@ condition: >
       and not file.path imatches '?:\\ProgramData\\*'
     )|
     |(
-      kevt.name = 'WriteFile'
+      evt.name = 'WriteFile'
       and file.io.size > 0
       and file.path imatches '?:\\Users\\*'
       and not file.path imatches '?:\\Users\\*\\AppData\\*'
@@ -85,15 +85,15 @@ condition: >
     )|
     |(
       (
-        kevt.name = 'RenameFile'
+        evt.name = 'RenameFile'
       )
       or
       (
-        kevt.name = 'FileDelete'
+        evt.name = 'DeleteFile'
       )
       or
       (
-        kevt.name = 'FileCreate'
+        evt.name = 'CreateFile'
       )
     )|
 
@@ -107,11 +107,11 @@ output: |
   - Command Line: %ps.cmdline
   - Parent Process: %ps.parent.name (PPID: %ps.ppid)
 
-  - Signature Status: %pe.is_signed
+  - Signature Status: %ps.signature.exists
   - Cert Subject: %pe.cert.subject
   - Cert Issuer: %pe.cert.issuer
   - Process is Modified?: %pe.is_modified
 
 severity: critical
 
-min-engine-version: 2.0.0
+min-engine-version: 3.0.0

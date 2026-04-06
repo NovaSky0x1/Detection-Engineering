@@ -47,4 +47,4 @@ output: |
   - Session: %1.ps.sid
 
 severity: high
-min-engine-version: 2.4.0
+min-engine-version: 3.0.0
